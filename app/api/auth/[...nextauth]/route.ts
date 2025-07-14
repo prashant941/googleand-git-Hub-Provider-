@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { connectToDatabase } from "@/utils/db";
-import {User} from "@/models/User";
+import { User } from "@/models/User";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,16 +11,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user }) {
       await connectToDatabase();
+
       const existingUser = await User.findOne({ email: user.email });
-    
+
       if (!existingUser) {
-        // Block sign-in for non-registered users
-        return false;
+        await User.create({
+          name: user.name,
+          email: user.email!,
+          image: user.image,
+        });
+        console.log("✅ New user saved");
+      } else {
+        console.log("👤 Existing user");
       }
+
       return true;
-    }
+    },
     async session({ session }) {
       return session;
     },
